@@ -41,9 +41,26 @@ renomear_continentes = {
 
 df['continente'] = df['continente'].replace(renomear_continentes)
 
+def formatar_numero(valor):
+    if valor >= 1_000_000:
+        return f"{valor / 1_000_000:.1f}M"
+    elif valor >= 1_000:
+        return f"{valor / 1_000:.1f}K"
+    else:
+        return str(valor)
+    
+traducao_causas = {
+    "ALL CAUSES": "Todas as causas",
+    "Trachea, bronchus, lung cancers": "Câncer",
+    "Chronic obstructive pulmonary disease": "Obstrução da respiração",
+    "Acute lower respiratory infections": "Infecções respiratórias",
+    "Stroke": "AVC",
+    "Ischaemic heart disease": "Doença cardíaca isquêmica"
+}
+
 st.title("Mortes por Continente")
 
-option = st.selectbox("Selecione a Visualização", ["Total de Mortes por Continente", "Tendência de Mortes por Continente"])
+option = st.selectbox("Selecione a Visualização", ["Total de Mortes por Continente", "Tendência de Mortes por Continente", "Causas das mortes ao longo dos anos"])
 
 if option == "Total de Mortes por Continente":
     st.header("Total de Mortes por Continente")
@@ -67,7 +84,7 @@ if option == "Total de Mortes por Continente":
     )
 
     st.plotly_chart(fig)
-else:
+elif option == "Tendência de Mortes por Continente":
     st.header("Tendência de Mortes por Continente")
 
     mortes_anuais_por_continente = df.groupby(['continente', 'ano'])['mortes'].sum().unstack().fillna(0).reset_index()
@@ -80,4 +97,43 @@ else:
 
     fig = px.line(mortes_anuais_por_continente, x="ano", y="mortes", color="continente", 
                 title="Tendência de Mortes por Continente")
+    st.plotly_chart(fig)
+elif option == "Causas das mortes ao longo dos anos":
+    st.header("Causas das mortes ao longo dos anos")
+
+    col1, col2 = st.columns([2, 3])
+
+    causas_traduzidas = ["Todas as causas"] + [traducao_causas.get(causa, causa) for causa in df['causa'].unique() if causa != "ALL CAUSES"]
+
+    with col2:
+        causa_traduzida_selecionada = st.selectbox("Selecione uma Causa", options=causas_traduzidas, index=0)
+
+    causa_selecionada = {v: k for k, v in traducao_causas.items()}.get(causa_traduzida_selecionada, causa_traduzida_selecionada)
+
+    dados_filtrados = df[df['causa'] == causa_selecionada].groupby(['ano'])['mortes'].sum().reset_index()
+    total_mortes = df[df['causa'] == causa_selecionada]['mortes'].sum()
+
+    with col1:
+        st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes:</span>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='font-size:38px; margin:0;'>{total_mortes:,.0f}</h4>", unsafe_allow_html=True)
+
+    dados_filtrados['mortes_formatado'] = dados_filtrados['mortes'].apply(formatar_numero)
+    
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=dados_filtrados['ano'],
+            y=dados_filtrados['mortes'],
+            mode='lines+markers+text',
+            marker=dict(size=13),
+            line=dict(dash='dash', shape='spline', color="#3867D6"),
+            text=dados_filtrados['mortes_formatado'],
+            textposition="top center",
+            textfont=dict(size=13, color="#3867D6")
+        )
+    )
+    
+    fig.update_layout(legend_title_text='Causa')
+    fig.update_yaxes(showticklabels=False, title_text='')
+
     st.plotly_chart(fig)
