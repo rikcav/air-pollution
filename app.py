@@ -58,7 +58,7 @@ traducao_causas = {
     "Ischaemic heart disease": "Doença cardíaca isquêmica"
 }
 
-st.title("Mortes por Continente")
+st.title("Mortes atribuídas à poluição do ar")
 
 option = st.selectbox("Selecione a Visualização", ["Total de Mortes por Continente", "Tendência de Mortes por Continente", "Causas das mortes ao longo dos anos", "Tendência de Mortes por Ano"])
 
