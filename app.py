@@ -60,7 +60,7 @@ traducao_causas = {
 
 st.title("Mortes por Continente")
 
-option = st.selectbox("Selecione a Visualização", ["Total de Mortes por Continente", "Tendência de Mortes por Continente", "Causas das mortes ao longo dos anos"])
+option = st.selectbox("Selecione a Visualização", ["Total de Mortes por Continente", "Tendência de Mortes por Continente", "Causas das mortes ao longo dos anos", "Tendência de Mortes por Ano"])
 
 if option == "Total de Mortes por Continente":
     st.header("Total de Mortes por Continente")
@@ -136,4 +136,32 @@ elif option == "Causas das mortes ao longo dos anos":
     fig.update_layout(legend_title_text='Causa')
     fig.update_yaxes(showticklabels=False, title_text='')
 
+    st.plotly_chart(fig)
+
+elif option == "Tendência de Mortes por Ano":
+    mortes_anuais = df.groupby('ano')['mortes'].sum().reset_index()
+
+    anos = list(mortes_anuais['ano'].unique())
+    anos.insert(0, "Todos os anos")  
+
+    ano_selecionado = st.selectbox("Anos", anos,label_visibility='hidden')
+
+    if ano_selecionado == "Todos os anos":
+    
+        fig = px.line(mortes_anuais, x="ano", y="mortes", 
+                  title="Tendência de Mortes por Ano", 
+                  markers=True)
+    else:
+    
+        fig = px.line(mortes_anuais, x="ano", y="mortes", 
+                  title="Tendência de Mortes por Ano", 
+                  markers=False)
+    
+    
+        ano_destaque = mortes_anuais[mortes_anuais['ano'] == ano_selecionado]
+        fig.add_scatter(x=ano_destaque['ano'], y=ano_destaque['mortes'], 
+                    mode='markers', marker=dict(size=10, color='red'), 
+                    name=f"Destaque {ano_selecionado}")
+
+    
     st.plotly_chart(fig)
