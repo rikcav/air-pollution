@@ -124,7 +124,7 @@ with col2:
 
         continente_selecionado = st.selectbox("Selecione um Continente", options=df['continente'].unique())
 
-        colors = ['#3867D6' if continent != continente_selecionado else '#523DDA' for continent in df['continente']]
+        colors = ['#EAEBF8' if continent != continente_selecionado else '#523DDA' for continent in df['continente']]
 
         fig = go.Figure(data=[
             go.Bar(
