@@ -124,7 +124,7 @@ with col2:
 
         continente_selecionado = st.selectbox("Selecione um Continente", options=df['continente'].unique())
 
-        colors = ['#EAEBF8' if continent != continente_selecionado else '#6256F1' for continent in df['continente']]
+        colors = ['#3867D6' if continent != continente_selecionado else '#523DDA' for continent in df['continente']]
 
         fig = go.Figure(data=[
             go.Bar(
@@ -142,18 +142,47 @@ with col2:
 
         st.plotly_chart(fig)
     elif btn == "Tendência de Mortes por Continente":
+        continente_selecionado = st.selectbox(
+            "Selecione um Continente para destacar",
+            options=df['continente'].unique(),
+            index=0
+        )
 
-        mortes_anuais_por_continente = df.groupby(['continente', 'ano'])['mortes'].sum().unstack().fillna(0).reset_index()
-
-        mortes_anuais_por_continente = mortes_anuais_por_continente.melt(id_vars="continente", var_name="ano", value_name="mortes")
-
+        mortes_anuais_por_continente = df.groupby(['continente', 'ano'])['mortes'].sum().reset_index()
         mortes_anuais_por_continente['ano'] = mortes_anuais_por_continente['ano'].astype(int)
+        mortes_anuais_por_continente['mortes_formatado'] = mortes_anuais_por_continente['mortes'].apply(formatar_numero)
 
-        mortes_anuais_por_continente['mortes'] = mortes_anuais_por_continente['mortes'].fillna(0)
+        fig = go.Figure()
 
-        fig = px.line(mortes_anuais_por_continente, x="ano", y="mortes", color="continente", 
-                    title="Tendência de Mortes por Continente")
-        st.plotly_chart(fig)
+        for continente in mortes_anuais_por_continente['continente'].unique():
+            dados_continente = mortes_anuais_por_continente[mortes_anuais_por_continente['continente'] == continente]
+            color = "#3867D6" if continente == continente_selecionado else "#EAEBF8"
+            line_dash = "solid" if continente == continente_selecionado else "dash"
+
+            fig.add_trace(
+                go.Scatter(
+                    x=dados_continente['ano'],
+                    y=dados_continente['mortes'],
+                    mode='lines+markers+text',
+                    name=continente,
+                    line=dict(dash=line_dash, shape='spline', color=color),
+                    marker=dict(size=10, color=color),
+                    text=dados_continente['mortes_formatado'] if continente == continente_selecionado else None,
+                    textposition="top center",
+                    textfont=dict(size=12, color=color)
+                )
+            )
+
+        fig.update_layout(
+            title="Tendência de Mortes por Continente",
+            xaxis=dict(title="Ano", showgrid=False),
+            yaxis=dict(title="Mortes", showgrid=True, showticklabels=True),
+            plot_bgcolor="white",
+            font=dict(size=14, color="black"),
+            legend=dict(title="Continente", orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
     elif btn == "Causas das mortes ao longo dos anos":
 
         col1, col2 = st.columns([2, 3])
