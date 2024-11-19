@@ -288,7 +288,7 @@ with col2:
         
         fig.update_layout(
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=False, showticklabels=False),
+            yaxis=dict(showgrid=True, showticklabels=False),
             legend_title=None,
             showlegend=False,
             plot_bgcolor="white"
