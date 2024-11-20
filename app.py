@@ -3,7 +3,14 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import leafmap.foliumap as leafmap
+import folium
 import streamlit_antd_components as sac
+import requests
+import json
+import requests
+import streamlit.components.v1 as components
+from folium import Popup
 
 st.markdown(
     """
@@ -345,3 +352,87 @@ with col2:
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+#=============================================================================================
+#Mapa
+
+st.title("10 Países com Mais Mortes")
+
+top_paises_todas_mortes = df.groupby('pais')['mortes'].sum().nlargest(10).reset_index()
+
+top_paises_todas_mortes["pais"] = top_paises_todas_mortes["pais"].replace({
+    "Russian Federation": "Russia"
+})
+
+translations = {
+    "China": "China",
+    "India": "India",
+    "Pakistan": "Paquistao",
+    "Russian Federation": "Russia",
+    "Indonesia": "Indonesia",
+    "Nigeria": "Nigeria",
+    "United States of America": "Estados Unidos",
+    "Bangladesh": "Bangladesh",
+    "Egypt": "Egito",
+    "Japan": "Japao"
+}
+
+coordinates = {
+    "China": [35.8617, 104.1954],
+    "India": [20.5937, 78.9629],
+    "Pakistan": [30.3753, 69.3451],
+    "Russia": [61.5240, 105.3188],
+    "Indonesia": [-0.7893, 113.9213],
+    "Nigeria": [9.0820, 8.6753],
+    "United States of America": [37.0902, -95.7129],
+    "Bangladesh": [23.6850, 90.3563],
+    "Egypt": [26.8206, 30.8025],
+    "Japan": [36.2048, 138.2529]
+}
+
+geojson_url = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json"
+response = requests.get(geojson_url)
+geojson_data = json.loads(response.text)
+
+m = folium.Map(location=[0, 0], zoom_start=1)
+
+
+folium.Choropleth(
+    geo_data=geojson_data,
+    name="choropleth",
+    data=top_paises_todas_mortes,
+    columns=["pais", "mortes"], 
+    key_on="feature.properties.name", 
+    fill_color="Blues",  
+    fill_opacity=0.5,
+    line_opacity=0.5,
+    legend_name="Valor (em milhões)",
+    highlight=True
+).add_to(m)
+
+for i, row in top_paises_todas_mortes.iterrows():
+    country = row["pais"]
+    mortes = row["mortes"]
+    
+  
+    translated_name = translations.get(country, country) 
+    
+    if country in coordinates:
+        lat, lon = coordinates[country]
+        popup_text = f"<b>Pais:</b> {translated_name}<br><b>Mortes:</b> {mortes:,}"
+        popup = Popup(popup_text, max_width=300)
+        folium.CircleMarker(
+            location=[lat, lon],
+            radius=2, 
+            color="red", 
+            fill=True,
+            fill_color="red",
+            fill_opacity=0.6,
+            popup=popup
+        ).add_to(m)
+
+
+map_file = "world_map.html"
+m.save(map_file)
+
+components.html(open(map_file, "r", encoding="utf-8").read(), height=600)
