@@ -4,3 +4,8 @@ numpy
 altair
 pandas
 plotly
+leafmap
+geopandas
+shapely
+fiona
+pyproj
