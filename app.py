@@ -297,15 +297,19 @@ with col2:
         st.plotly_chart(fig, use_container_width=True)
 
     elif btn == "Total de Mortes por Causa":
-        total_mortes = df[df['causa'] == 'Todas as causas']['mortes'].sum()
-        causa_selec = st.selectbox("Selecione uma Causa", options=df['causa'].unique())
-        mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
+        col1, col2 = st.columns([2, 3])
 
-        st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div class='total-mortes'><span class='highlight'>{mortes_causa_selec:,}</span>/{total_mortes:,}</div>",
-            unsafe_allow_html=True
-        )
+        total_mortes = df[df['causa'] == 'ALL CAUSES']['mortes'].sum()
+        with col2:
+            causa_selec = st.selectbox("Selecione uma Causa", options=df['causa'].unique())
+            mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
+
+        with col1:
+            st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='total-mortes'><span class='highlight'>{mortes_causa_selec:,}</span>/{total_mortes:,}</div>",
+                unsafe_allow_html=True
+            )
 
         colors = ['#EAEBF8' if causa != causa_selec else '#3867D6' for causa in df['causa']]
 
@@ -320,8 +324,12 @@ with col2:
 
         fig.update_layout(
             title="",
-            xaxis_title="",
-            yaxis_title="",
+            xaxis=dict(
+                tickangle=0,
+                tickmode="array",
+                tickvals=df['causa'],
+                ticktext=[f"<br>".join(causa.split()) for causa in df['causa']],
+            ),
             font=dict(size=14, color="black"),
             plot_bgcolor="rgba(0, 0, 0, 0)",
             showlegend=False,
