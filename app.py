@@ -25,12 +25,12 @@ st.markdown(
             color: #2B3674;
         }
         .ant-btn {
-            width: 250px !important; /* Define largura fixa dos botões */
-            height: 50px !important; /* Define altura fixa dos botões */
-            display: inline-flex; /* Mantém o texto centralizado */
+            width: 250px !important;
+            height: 50px !important;
+            display: inline-flex;
             justify-content: center;
             align-items: center;
-            margin: 5px; /* Espaçamento entre os botões */
+            margin: 5px;
         }
         .ant-btn-group {
             display: flex;
@@ -51,6 +51,54 @@ st.markdown(
         .highlight {
             color: #3867D6;
         }
+    .custom-card {
+        background-color: rgb(75, 123, 236);
+        color: white;
+        width: 257px;
+        height: 97px;
+        border-radius: 20px;
+        padding: 15px 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .custom-card-white {
+        background-color: white;
+        color: #A3AED0;
+        width: 257px;
+        height: 97px;
+        border-radius: 20px;
+        padding: 15px 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .custom-card .title, .custom-card-white .title {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    .custom-card-white .title {
+        color: #A3AED0;
+    }
+
+
+    .custom-card .text, .custom-card-white .text {
+        font-size: 24px;
+        font-weight: 700;
+        margin-top: 0;
+    }
+
+    .custom-card-white .text {
+        color: #1B2559;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -71,6 +119,7 @@ df = df.drop(df[df['Dim1ValueCode'].isin(['SEX_MLE', 'SEX_FMLE'])].index)
 df = df.drop(['Dim1', 'Dim1ValueCode'], axis=1)
 df['FactValueNumeric'] = df['FactValueNumeric'].round().astype(int)
 
+
 df.rename(columns={
     'ParentLocationCode': 'continente_code',
     'ParentLocation': 'continente',
@@ -80,6 +129,8 @@ df.rename(columns={
     'Dim2ValueCode': 'causa_code',
     'FactValueNumeric': 'mortes'
 }, inplace=True)
+
+total_mortes = df[df['causa'] == 'ALL CAUSES']['mortes'].sum()
 
 renomear_continentes = {
     'Americas': 'Américas',
@@ -109,7 +160,43 @@ traducao_causas = {
     "Ischaemic heart disease": "Doença cardíaca isquêmica"
 }
 
+mortes_por_continente = df.groupby('continente')['mortes'].sum()
+continente_mais_mortes = mortes_por_continente.idxmax()
+
+st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+
 st.title("Mortes atribuídas à poluição do ar no ano de 2014 ~ 2019")
+
+def formatar_em_milhoes(valor):
+    if valor >= 1_000_000:
+        return f"{int(valor / 1_000_000)} milhões"
+    return str(valor)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown(
+        f"""
+        <div class="custom-card">
+            <div class="title">Mais de</div>
+            <div class="text">{formatar_em_milhoes(total_mortes)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col2:
+    st.markdown(
+        f"""
+        <div class="custom-card-white">
+            <div class="title">Região com mais mortes</div>
+            <div class="text">{continente_mais_mortes}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 3])
 
@@ -306,7 +393,6 @@ with col2:
     elif btn == "Total de Mortes por Causa":
         col1, col2 = st.columns([2, 3])
 
-        total_mortes = df[df['causa'] == 'ALL CAUSES']['mortes'].sum()
         with col2:
             causa_selec = st.selectbox("Selecione uma Causa", options=df['causa'].unique())
             mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
