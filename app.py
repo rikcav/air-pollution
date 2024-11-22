@@ -162,6 +162,9 @@ traducao_causas = {
 
 mortes_por_continente = df.groupby('continente')['mortes'].sum()
 continente_mais_mortes = mortes_por_continente.idxmax()
+pais_mais_mortes = df.groupby('pais')['mortes'].sum().idxmax()
+mortes_pais_mais_mortes = df.groupby('pais')['mortes'].sum().max()
+mortes_em_2018 = df[df['ano'] == 2018]['mortes'].sum()
 
 st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
 
@@ -172,7 +175,29 @@ def formatar_em_milhoes(valor):
         return f"{int(valor / 1_000_000)} milhões"
     return str(valor)
 
-col1, col2 = st.columns(2)
+col1, col2, col3, col4 = st.columns(4)
+
+with col3:
+    st.markdown(
+        f"""
+        <div class="custom-card-white">
+            <div class="title">País com mais mortes</div>
+            <div class="text">{pais_mais_mortes} ({formatar_numero(mortes_pais_mais_mortes)})</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col4:
+    st.markdown(
+        f"""
+        <div class="custom-card">
+            <div class="title">Em 2018</div>
+            <div class="text">{formatar_em_milhoes(mortes_em_2018)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 with col1:
     st.markdown(
