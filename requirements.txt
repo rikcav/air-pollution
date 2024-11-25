@@ -9,3 +9,4 @@ geopandas
 shapely
 fiona
 pyproj
+streamlit-antd-components
