@@ -159,6 +159,7 @@ traducao_causas = {
     "Stroke": "AVC",
     "Ischaemic heart disease": "Doença cardíaca isquêmica"
 }
+df['causa'] = df['causa'].replace(traducao_causas)
 
 mortes_por_continente = df.groupby('continente')['mortes'].sum()
 continente_mais_mortes = mortes_por_continente.idxmax()
@@ -242,18 +243,17 @@ with col2:
     if btn == "Total de Mortes por Continente":
 
         col1, col2 = st.columns([2, 3])
-
-        with col1:
-            total_mortes_continente = df.groupby('continente')['mortes'].sum().sum()
-            st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes</span>", unsafe_allow_html=True)
-            st.markdown(
-                f"<h4 style='font-size:38px; margin:0;'>{total_mortes_continente:,}</h4>",
-                unsafe_allow_html=True
-            )
-
         with col2:
             continente_selecionado = st.selectbox("Selecione um Continente", options=df['continente'].unique())
-            mortes_continente_selec = df[df['continente'] == continente_selecionado]['mortes'].sum()
+            mortes_continente_selec = df[df['causa'] == 'Todas as causas'][df['continente'] == continente_selecionado]['mortes'].sum()
+
+        with col1:
+            total_mortes_continente = df[df['causa'] == 'Todas as causas'].groupby('continente')['mortes'].sum().sum()
+            st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes</span>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='total-mortes'><span class='highlight'>{mortes_continente_selec:,}</span>/{total_mortes:,}</div>",
+                unsafe_allow_html=True
+            )
 
         colors = ['#EAEBF8' if continent != continente_selecionado else '#3867D6' for continent in df['continente']]
 
@@ -303,7 +303,7 @@ with col2:
         col1, col2 = st.columns([2, 3])
 
         
-        mortes_anuais_por_continente = df.groupby(['continente', 'ano'])['mortes'].sum().reset_index()
+        mortes_anuais_por_continente = df[df['causa'] == 'Todas as causas'].groupby(['continente', 'ano'])['mortes'].sum().reset_index()
         mortes_anuais_por_continente['ano'] = mortes_anuais_por_continente['ano'].astype(int)
         mortes_anuais_por_continente['mortes_formatado'] = mortes_anuais_por_continente['mortes'].apply(formatar_numero)
 
@@ -323,8 +323,8 @@ with col2:
 
    
         with col1:
-            st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes:</span>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='font-size:38px; margin:0;'>{total_mortes_continente:,.0f}</h4>", unsafe_allow_html=True)
+            st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='total-mortes'>{total_mortes_continente:,}</div>",unsafe_allow_html=True)
 
         fig = go.Figure()
 
@@ -356,20 +356,23 @@ with col2:
 
         col1, col2 = st.columns([2, 3])
 
-        causas_traduzidas = ["Todas as causas"] + [traducao_causas.get(causa, causa) for causa in df['causa'].unique() if causa != "ALL CAUSES"]
+        # causas_traduzidas = ["Todas as causas"] + [traducao_causas.get(causa, causa) for causa in df['causa'].unique() if causa != "ALL CAUSES"]
 
         with col2:
-            causa_traduzida_selecionada = st.selectbox("Selecione uma Causa", options=causas_traduzidas, index=0)
+            causa_selec = st.selectbox("Selecione uma Causa", options=df['causa'].unique())
+        # causa_selecionada = {v: k for k, v in traducao_causas.items()}.get(causa_traduzida_selecionada, causa_traduzida_selecionada)
+        mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
+            # causa_traduzida_selecionada = st.selectbox("Selecione uma Causa", options=causas_traduzidas, index=0)
 
-        causa_selecionada = {v: k for k, v in traducao_causas.items()}.get(causa_traduzida_selecionada, causa_traduzida_selecionada)
+        # causa_selecionada = {v: k for k, v in traducao_causas.items()}.get(causa_traduzida_selecionada, causa_traduzida_selecionada)
 
-        dados_filtrados = df[df['causa'] == causa_selecionada].groupby(['ano'])['mortes'].sum().reset_index()
-        total_mortes = df[df['causa'] == causa_selecionada]['mortes'].sum()
+        dados_filtrados = df[df['causa'] == causa_selec].groupby(['ano'])['mortes'].sum().reset_index()
+        total_mortes_causa = df[df['causa'] == causa_selec]['mortes'].sum()
 
         with col1:
-            st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes:</span>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='font-size:38px; margin:0;'>{total_mortes:,.0f}</h4>", unsafe_allow_html=True)
-
+            st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='total-mortes'>{total_mortes_causa:,}</div>",unsafe_allow_html=True)
+            
         dados_filtrados['mortes_formatado'] = dados_filtrados['mortes'].apply(formatar_numero)
         
         fig = go.Figure()
@@ -395,9 +398,8 @@ with col2:
         
         col1, col2 = st.columns([2, 3])
 
-        
-        mortes_anuais = df.groupby('ano')['mortes'].sum().reset_index()
-        total_mortes = mortes_anuais['mortes'].sum()
+        mortes_anuais = df[df['causa'] == 'Todas as causas'].groupby(['ano'])['mortes'].sum().reset_index()
+        # total_mortes = mortes_anuais['mortes'].sum()
 
         anos = ["Todos os anos"] + list(mortes_anuais['ano'].unique())
         
@@ -406,19 +408,21 @@ with col2:
 
         with col1:
             if ano_selecionado == "Todos os anos":
-                st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes:</span>", unsafe_allow_html=True)
-                st.markdown(f"<h4 style='font-size:38px; margin:0;'>{total_mortes:,.0f}</h4>", unsafe_allow_html=True)
+                st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='total-mortes'>{total_mortes:,}</div>",unsafe_allow_html=True)
             else:
                 mortes_ano = mortes_anuais[mortes_anuais['ano'] == ano_selecionado]['mortes'].values[0]
-                st.markdown("<span style='font-size:16px; margin:0;'>Mortes selecionadas / Total:</span>", unsafe_allow_html=True)
-                st.markdown(f"<h4 style='font-size:38px; margin:0;'>{mortes_ano:,.0f} / {total_mortes:,.0f}</h4>", unsafe_allow_html=True)
+                # st.markdown("<span style='font-size:16px; margin:0;'>Mortes selecionadas / Total:</span>", unsafe_allow_html=True)
+                # st.markdown(f"<h4 style='font-size:38px; margin:0;'>{mortes_ano:,.0f} / {total_mortes:,.0f}</h4>", unsafe_allow_html=True)
+                st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='total-mortes'><span class='highlight'>{mortes_ano:,.0f}</span>/{total_mortes:,}</div>",unsafe_allow_html=True)
 
         fig = go.Figure()
         
         
         fig.add_trace(
             go.Scatter(
-            x=mortes_anuais['ano'],
+                x=mortes_anuais['ano'],
                 y=mortes_anuais['mortes'],
                 mode='lines',
                 line=dict(dash='dash', shape='spline', color="#3867D6"),
@@ -468,9 +472,15 @@ with col2:
     elif btn == "Total de Mortes por Causa":
         col1, col2 = st.columns([2, 3])
 
+        # causas_traduzidas = ["Todas as causas"] + [traducao_causas.get(causa, causa) for causa in df['causa'].unique() if causa != "ALL CAUSES"]
+
         with col2:
+            # causa_traduzida_selecionada = st.selectbox("Selecione uma Causa", options=causas_traduzidas, index=0)
+
             causa_selec = st.selectbox("Selecione uma Causa", options=df['causa'].unique())
-            mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
+        # causa_selecionada = {v: k for k, v in traducao_causas.items()}.get(causa_traduzida_selecionada, causa_traduzida_selecionada)
+        mortes_causa_selec = df[df['causa'] == causa_selec]['mortes'].sum()
+
 
         with col1:
             st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
