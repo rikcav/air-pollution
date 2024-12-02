@@ -243,26 +243,31 @@ with col2:
     if btn == "Total de Mortes por Continente":
 
         col1, col2 = st.columns([2, 3])
+        
         with col2:
             continente_selecionado = st.selectbox("Selecione um Continente", options=df['continente'].unique())
-            mortes_continente_selec = df[df['causa'] == 'Todas as causas'][df['continente'] == continente_selecionado]['mortes'].sum()
+            mortes_continente_selec = df[(df['causa'] == 'Todas as causas') & (df['continente'] == continente_selecionado)]['mortes'].sum()
 
         with col1:
-            total_mortes_continente = df[df['causa'] == 'Todas as causas'].groupby('continente')['mortes'].sum().sum()
-            st.markdown("<span style='font-size:16px; margin:0;'>Total de mortes</span>", unsafe_allow_html=True)
+            total_mortes_continente = df[df['causa'] == 'Todas as causas']['mortes'].sum()
+            
+            st.markdown("<div class='title-text'>Total de mortes</div>", unsafe_allow_html=True)
             st.markdown(
-                f"<div class='total-mortes'><span class='highlight'>{mortes_continente_selec:,}</span>/{total_mortes:,}</div>",
+                f"<div class='total-mortes'><span class='highlight'>{mortes_continente_selec:,}</span>/{total_mortes_continente:,}</div>",
                 unsafe_allow_html=True
             )
 
-        colors = ['#EAEBF8' if continent != continente_selecionado else '#3867D6' for continent in df['continente']]
+        mortes_por_continente = df[df['causa'] == 'Todas as causas'].groupby('continente')['mortes'].sum()
+        
+        colors = ['#EAEBF8' if continente != continente_selecionado else '#3867D6' for continente in mortes_por_continente.index]
 
         fig = go.Figure(data=[
             go.Bar(
-                x=df['continente'],
-                y=df['mortes'],
+                x=mortes_por_continente.index,
+                y=mortes_por_continente.values,
                 marker_color=colors,
-                textposition="outside",
+                textposition="none",
+                hoverinfo="x+y"
             )
         ])
 
@@ -271,8 +276,12 @@ with col2:
             xaxis=dict(
                 tickangle=0,
                 tickmode="array",
-                tickvals=df['continente'],
-                ticktext=[f"<br>".join(continent.split()) for continent in df['continente']],
+                tickvals=list(mortes_por_continente.index),
+                ticktext=[f"<br>".join(continent.split()) for continent in mortes_por_continente.index],
+            ),
+            yaxis=dict(
+                showticklabels=False,
+                showgrid=False
             ),
             font=dict(size=14, color="black"),
             plot_bgcolor="rgba(0, 0, 0, 0)",
@@ -282,18 +291,20 @@ with col2:
 
         fig.add_shape(
             type="line",
-            x0=-0.5, x1=5.5,
+            x0=-0.5, x1=len(mortes_por_continente.index) - 0.5,
             y0=mortes_continente_selec, y1=mortes_continente_selec,
             line=dict(color="#3867D6", width=2, dash="dash")
         )
         
         fig.add_annotation(
-            x=list(df['continente']).index(continente_selecionado),
+            x=len(mortes_por_continente.index) - 0.5,
             y=mortes_continente_selec,
-            text=f"",
+            text=f"{formatar_numero(mortes_continente_selec)}",
             showarrow=False,
-            font=dict(color="#3867D6", size=15),
-            align="center",
+            font=dict(color="#3867D6", size=12),
+            align="right",
+            xanchor="left",
+            yanchor="middle"
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -343,8 +354,8 @@ with col2:
         )
 
         fig.update_layout(
-            xaxis=dict(showgrid=False, title="Ano"),
-            yaxis=dict(showgrid=True, showticklabels=False, title=""),
+            xaxis=dict(showgrid=False, title=""),
+            yaxis=dict(showgrid=False, showticklabels=False, title=""),
             plot_bgcolor="rgba(0, 0, 0, 0)",
             font=dict(size=14, color="black"),
             showlegend=False,
@@ -390,7 +401,8 @@ with col2:
         )
         
         fig.update_layout(legend_title_text='Causa')
-        fig.update_yaxes(showticklabels=False, title_text='')
+        fig.update_yaxes(showticklabels=False, title_text='', showgrid=False)
+        fig.update_xaxes(showgrid=False)
 
         st.plotly_chart(fig)
 
@@ -455,13 +467,11 @@ with col2:
                     textfont=dict(size=12, color="#3867D6"),
                     name="Tendência"
                 )
-            )
-    
-            
+            )     
         
         fig.update_layout(
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, showticklabels=False),
+            yaxis=dict(showgrid=False, showticklabels=False),
             legend_title=None,
             showlegend=False,
             plot_bgcolor="white"
@@ -491,12 +501,18 @@ with col2:
 
         colors = ['#EAEBF8' if causa != causa_selec else '#3867D6' for causa in df['causa']]
 
+
+        
+
+        # st.plotly_chart(fig, use_container_width=True)
+    
         fig = go.Figure(data=[
                 go.Bar(
                     x=df['causa'],
                     y=df['mortes'],
                     marker_color=colors,
-                    textposition="outside",
+                    textposition="none",
+                    hoverinfo="x+y"
                 )
             ])
 
@@ -507,6 +523,10 @@ with col2:
                 tickmode="array",
                 tickvals=df['causa'],
                 ticktext=[f"<br>".join(causa.split()) for causa in df['causa']],
+            ),
+            yaxis=dict(
+                showticklabels=False,
+                showgrid=False
             ),
             font=dict(size=14, color="black"),
             plot_bgcolor="rgba(0, 0, 0, 0)",
@@ -521,13 +541,26 @@ with col2:
             line=dict(color="#3867D6", width=2, dash="dash")
         )
 
+        # fig.add_annotation(
+        #     x=len(mortes_por_continente.index) - 0.5,
+        #     y=mortes_continente_selec,
+        #     text=f"{formatar_numero(mortes_continente_selec)}",
+        #     showarrow=False,
+        #     font=dict(color="#3867D6", size=12),
+        #     align="right",
+        #     xanchor="left",
+        #     yanchor="middle"
+        # )
+
         fig.add_annotation(
             x=5.5,
             y=mortes_causa_selec,
-            text=f"{mortes_causa_selec:,}",
+            text=f"{formatar_numero(mortes_causa_selec)}",
             showarrow=False,
             font=dict(color="#3867D6", size=12),
             align="right",
+            xanchor="left",
+            yanchor="middle"
         )
 
         st.plotly_chart(fig, use_container_width=True)
